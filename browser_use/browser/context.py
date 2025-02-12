@@ -13,6 +13,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional, TypedDict
 
+from playwright._impl._errors import TimeoutError
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import (
 	BrowserContext as PlaywrightBrowserContext,
@@ -207,7 +208,15 @@ class BrowserContext:
 
 		context = await self._create_context(playwright_browser)
 		self._add_new_page_listener(context)
-		page = await context.new_page()
+
+		# Check if there's an existing page we can use
+		existing_pages = context.pages
+		if existing_pages:
+			page = existing_pages[-1]  # Use the last existing page
+			logger.debug('Reusing existing page')
+		else:
+			page = await context.new_page()
+			logger.debug('Created new page')
 
 		# Instead of calling _update_state(), create an empty initial state
 		initial_state = self._get_initial_state(page)
@@ -1087,7 +1096,7 @@ class BrowserContext:
 		if self.session and self.session.context and self.config.cookies_file:
 			try:
 				cookies = await self.session.context.cookies()
-				logger.info(f'Saving {len(cookies)} cookies to {self.config.cookies_file}')
+				logger.debug(f'Saving {len(cookies)} cookies to {self.config.cookies_file}')
 
 				# Check if the path is a directory and create it if necessary
 				dirname = os.path.dirname(self.config.cookies_file)
