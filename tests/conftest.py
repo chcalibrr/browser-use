@@ -19,7 +19,7 @@ load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-from langchain_core.language_models.fake import FakeListChatModel
+from langchain_core.language_models import FakeListChatModel
 from langchain_openai import ChatOpenAI
 
 from browser_use.browser.browser import Browser, BrowserConfig
